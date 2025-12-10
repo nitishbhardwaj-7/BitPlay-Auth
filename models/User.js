@@ -65,6 +65,10 @@ const userSchema = new mongoose.Schema({
       id: String,
       accessToken: String
     },
+    apple: {
+      id: String,
+      accessToken: String
+    }
     facebook: {
       id: String,
       accessToken: String
