@@ -68,7 +68,7 @@ const userSchema = new mongoose.Schema({
     apple: {
       id: String,
       accessToken: String
-    }
+    },
     facebook: {
       id: String,
       accessToken: String
