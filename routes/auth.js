@@ -15,13 +15,17 @@ const {
   updateemailotp,
   updateemail,
   TwoFactorOTP,
-  VerifyTwoFaOTP
+  VerifyTwoFaOTP,
+  claimReferral
 } = require('../controllers/authController');
 
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
 const router = express.Router();
+
+/** Escapes regex metacharacters so user input inside a $regex is a literal. */
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 router.get("/referrals", async (req, res) => {
   try {
@@ -36,7 +40,7 @@ router.get("/referrals", async (req, res) => {
 
     // Count only active users with this referral code (case-insensitive)
     const count = await User.countDocuments({
-      referralUsed: { $regex: `^${code}$`, $options: "i" },
+      referralUsed: { $regex: `^${escapeRegex(code)}$`, $options: "i" },
       isActive: true
     });
 
@@ -72,6 +76,7 @@ router.post('/verify-twofactorotp', VerifyTwoFaOTP);
 
 // Protected routes
 router.get('/me', auth, getMe);
+router.post('/referral/claim', auth, claimReferral);
 router.get('/logout', auth, logout);
 
 module.exports = router;
