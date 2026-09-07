@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 const sendTokenResponse = require('../utils/sendTokenResponse');
+const { isDisposableEmail } = require('../utils/disposableEmail');
 
 /** Escapes regex metacharacters so user input inside a $regex is a literal. */
 const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -18,6 +19,17 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide name, email and password'
+      });
+    }
+
+    // Throwaway addresses are refused at sign-up only. Existing accounts are
+    // never re-checked -- whatever anyone already registered with keeps working.
+    if (isDisposableEmail(email)) {
+      console.log(`[Register] Refused disposable address: ${String(email).split('@')[1]}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Please sign up with a permanent email address. Temporary and disposable email providers are not accepted.',
+        code: 'DISPOSABLE_EMAIL'
       });
     }
 
@@ -466,6 +478,19 @@ exports.socialLogin = async (req, res, next) => {
     // Check if user already exists with this email
     let user = await User.findOne({ email });
     const isNewUser = !user;
+
+    // Same rule for social sign-ups, but only when the account is being created.
+    // An existing user signing in again is never re-checked, whatever address
+    // they already have. Apple's private relay is not on the list, so Sign in
+    // with Apple keeps working.
+    if (isNewUser && isDisposableEmail(email)) {
+      console.log(`[SocialLogin] Refused disposable address: ${String(email).split('@')[1]}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Please sign up with a permanent email address. Temporary and disposable email providers are not accepted.',
+        code: 'DISPOSABLE_EMAIL'
+      });
+    }
 
     if (user) {
       // User exists, update social provider info if not already set

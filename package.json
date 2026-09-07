@@ -10,7 +10,8 @@
     "deploy": "npm run build && npm start",
     "build": "npm install",
     "test-api": "node test-api.js",
-    "test-full": "node test-comprehensive.js"
+    "test-full": "node test-comprehensive.js",
+    "test:emails": "node tests/disposable-email.test.js"
   },
   "keywords": [
     "nodejs",
